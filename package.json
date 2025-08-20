@@ -1,6 +1,6 @@
 {
 	"name": "@pori15/schema-typebox-generator",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"author": "pori",
 	"type": "module",
 	"types": "./dist/index.d.ts",
@@ -31,10 +31,11 @@
 		"dev": "bun run src/index.ts",
 		"test": "bun test",
 		"prepublishOnly": "bun run build",
-		"publish": "bun run build && npm publish --access public"
-
+		"publish": " npm publish --access public"
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"dependencies": {
 		"typescript": "^5.8.3"
 	},

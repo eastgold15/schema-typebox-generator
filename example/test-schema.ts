@@ -1,27 +1,38 @@
-// 测试 Schema 文件
-import { pgTable, text, integer, timestamp } from 'drizzle-orm/pg-core'
+/**
+ * 自动生成的 TypeBox 配置文件
+ * 基于 Schema 文件中的 JSDoc @typebox 注释生成
+ * 请勿手动修改此文件
+ */
+
+import { createInsertSchema, createSelectSchema } from 'drizzle-typebox'
+import { spreads } from './dizzle.type.js'
+import { dbSchema, tableNames } from './generated-schema.js'
 
 /**
- * 用户表
+ * JSDoc 解析的 TypeBox 配置
  */
-export const userSchema = pgTable('users', {
-  id: integer('id').primaryKey(),
-  email: text('email').notNull(), // 邮箱 @typebox { "format": "email" }
-  name: text('name').notNull(), // 姓名 @typebox { "minLength": 2, "maxLength": 50 }
-  age: integer('age'), // @typebox { "minimum": 0, "maximum": 120 }
-  createdAt: timestamp('created_at').defaultNow(), // @typebox
-  updatedAt: timestamp('updated_at').defaultNow()
-})
+export const jsdocConfig = {} as const
 
 /**
- * 商品表
+ * 合并后的 Schema 自定义配置
  */
-export const productSchema = pgTable('products', {
-  id: integer('id').primaryKey(),
-  name: text('name').notNull(), // @typebox { "minLength": 1, "maxLength": 100 }
-  price: integer('price').notNull(), // @typebox { "minimum": 0 }
-  description: text('description'), // @typebox { "maxLength": 1000 }
-  stock: integer('stock').default(0), // @typebox { "minimum": 0 }
-  createdAt: timestamp('created_at').defaultNow(), // @typebox
-  updatedAt: timestamp('updated_at').defaultNow() // @typebox
-})
+export const schemaCustomizations = {
+} as const
+
+/**
+ * 数据库 TypeBox 配置
+ */
+export const DbType = {
+  typebox: {
+    insert: {
+    },
+    select: {
+    }
+  },
+  spreads: {
+    insert: spreads({
+    }, 'insert'),
+    select: spreads({
+    }, 'select')
+  }
+} as const

@@ -66,26 +66,26 @@ function mergeConfigurations(jsdocConfig: TypeBoxConfig, manualConfig: any = {})
   const merged: any = {}
 
   // 先添加 JSDoc 配置
-  for (const [tableName, tableConfig] of Object.entries(jsdocConfig)) {
-    merged[tableName] = {
+  for (const [schemaName, tableConfig] of Object.entries(jsdocConfig)) {
+    merged[schemaName] = {
       insert: convertToTypeBoxObjects(tableConfig.insert || {}),
       select: convertToTypeBoxObjects(tableConfig.select || {})
     }
   }
 
   // 然后合并手动配置（手动配置优先级更高）
-  for (const [tableName, tableConfig] of Object.entries(manualConfig)) {
-    if (!merged[tableName]) {
-      merged[tableName] = { insert: {}, select: {} }
+  for (const [schemaName, tableConfig] of Object.entries(manualConfig)) {
+    if (!merged[schemaName]) {
+      merged[schemaName] = { insert: {}, select: {} }
     }
 
     if (typeof tableConfig === 'object' && tableConfig !== null) {
       const config = tableConfig as any
       if (config.insert) {
-        Object.assign(merged[tableName].insert, config.insert)
+        Object.assign(merged[schemaName].insert, config.insert)
       }
       if (config.select) {
-        Object.assign(merged[tableName].select, config.select)
+        Object.assign(merged[schemaName].select, config.select)
       }
     }
   }
@@ -120,8 +120,8 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
   
   // 过滤掉空对象的 jsdocConfig
   const filteredJsdocConfig: any = {}
-  for (const [tableName, tableConfig] of Object.entries(jsdocConfig)) {
-    filteredJsdocConfig[tableName] = {
+  for (const [schemaName, tableConfig] of Object.entries(jsdocConfig)) {
+    filteredJsdocConfig[schemaName] = {
       insert: {},
       select: {}
     }
@@ -131,7 +131,7 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
       if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
         continue
       }
-      filteredJsdocConfig[tableName].insert[fieldName] = fieldConfig
+      filteredJsdocConfig[schemaName].insert[fieldName] = fieldConfig
     }
     
     // 过滤 select 配置
@@ -139,7 +139,7 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
       if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
         continue
       }
-      filteredJsdocConfig[tableName].select[fieldName] = fieldConfig
+      filteredJsdocConfig[schemaName].select[fieldName] = fieldConfig
     }
   }
   
@@ -149,9 +149,9 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
   code += `/**\n * 合并后的 Schema 自定义配置\n */\n`
   code += `export const schemaCustomizations = {\n`
 
-  for (const [tableName, tableConfig] of Object.entries(mergedConfig)) {
+  for (const [schemaName, tableConfig] of Object.entries(mergedConfig)) {
     const config = tableConfig as any
-    code += `  ${tableName}: {\n`
+    code += `  ${schemaName}: {\n`
     code += `    insert: {\n`
     for (const [fieldName, fieldConfig] of Object.entries(config.insert || {})) {
       // 跳过空配置对象
@@ -184,9 +184,9 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
   code += `    insert: {\n`
 
   // 生成 insert schemas
-  for (const [tableName, tableConfig] of Object.entries(mergedConfig)) {
+  for (const [schemaName, tableConfig] of Object.entries(mergedConfig)) {
     const config = tableConfig as any
-    code += `      ${tableName}: createInsertSchema(dbSchema.${tableName}`
+    code += `      ${schemaName}: createInsertSchema(dbSchema.${schemaName}`
     
     // 收集非空配置项
     const validInsertConfigs: string[] = []
@@ -212,9 +212,9 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
   code += `    select: {\n`
 
   // 生成 select schemas
-  for (const [tableName, tableConfig] of Object.entries(mergedConfig)) {
+  for (const [schemaName, tableConfig] of Object.entries(mergedConfig)) {
     const config = tableConfig as any
-    code += `      ${tableName}: createSelectSchema(dbSchema.${tableName}`
+    code += `      ${schemaName}: createSelectSchema(dbSchema.${schemaName}`
     
     // 收集非空配置项
     const validSelectConfigs: string[] = []
@@ -242,9 +242,9 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
   code += `    insert: spreads({\n`
 
   // 生成 spreads insert
-  for (const [tableName, tableConfig] of Object.entries(mergedConfig)) {
+  for (const [schemaName, tableConfig] of Object.entries(mergedConfig)) {
     const config = tableConfig as any
-    code += `      ${tableName}: createInsertSchema(dbSchema.${tableName}`
+    code += `      ${schemaName}: createInsertSchema(dbSchema.${schemaName}`
     
     // 收集非空配置项
     const validInsertConfigs: string[] = []
@@ -270,9 +270,9 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
   code += `    select: spreads({\n`
 
   // 生成 spreads select
-  for (const [tableName, tableConfig] of Object.entries(mergedConfig)) {
+  for (const [schemaName, tableConfig] of Object.entries(mergedConfig)) {
     const config = tableConfig as any
-    code += `      ${tableName}: createSelectSchema(dbSchema.${tableName}`
+    code += `      ${schemaName}: createSelectSchema(dbSchema.${schemaName}`
     
     // 收集非空配置项
     const validSelectConfigs: string[] = []
@@ -325,10 +325,10 @@ export async function generateTypeBoxFile(config: GeneratorConfig): Promise<void
     console.log(`📊 解析到 ${Object.keys(jsdocConfig).length} 个表的配置`)
 
     // 显示解析结果摘要
-    for (const [tableName, tableConfig] of Object.entries(jsdocConfig)) {
+    for (const [schemaName, tableConfig] of Object.entries(jsdocConfig)) {
       const insertFields = Object.keys(tableConfig.insert || {}).length
       const selectFields = Object.keys(tableConfig.select || {}).length
-      console.log(`   - ${tableName}: ${insertFields} insert 字段, ${selectFields} select 字段`)
+      console.log(`   - ${schemaName}: ${insertFields} insert 字段, ${selectFields} select 字段`)
     }
 
   } catch (error) {
