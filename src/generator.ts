@@ -115,67 +115,67 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
   code += `import { spreads } from '${config.spreadsImport || './dizzle.type.js'}'\n`
   code += `import { dbSchema, tableNames } from '${config.schemaImport || './generated-schema.js'}'\n\n`
 
-  // 生成配置对象
-  code += `/**\n * JSDoc 解析的 TypeBox 配置\n */\n`
+  // 生成配置对象（已注释掉，不再生成 jsdocConfig 和 schemaCustomizations）
+  // code += `/**\n * JSDoc 解析的 TypeBox 配置\n */\n`
   
-  // 过滤掉空对象的 jsdocConfig
-  const filteredJsdocConfig: any = {}
-  for (const [schemaName, tableConfig] of Object.entries(jsdocConfig)) {
-    filteredJsdocConfig[schemaName] = {
-      insert: {},
-      select: {}
-    }
+  // // 过滤掉空对象的 jsdocConfig
+  // const filteredJsdocConfig: any = {}
+  // for (const [schemaName, tableConfig] of Object.entries(jsdocConfig)) {
+  //   filteredJsdocConfig[schemaName] = {
+  //     insert: {},
+  //     select: {}
+  //   }
     
-    // 过滤 insert 配置
-    for (const [fieldName, fieldConfig] of Object.entries(tableConfig.insert || {})) {
-      if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
-        continue
-      }
-      filteredJsdocConfig[schemaName].insert[fieldName] = fieldConfig
-    }
+  //   // 过滤 insert 配置
+  //   for (const [fieldName, fieldConfig] of Object.entries(tableConfig.insert || {})) {
+  //     if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
+  //       continue
+  //     }
+  //     filteredJsdocConfig[schemaName].insert[fieldName] = fieldConfig
+  //   }
     
-    // 过滤 select 配置
-    for (const [fieldName, fieldConfig] of Object.entries(tableConfig.select || {})) {
-      if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
-        continue
-      }
-      filteredJsdocConfig[schemaName].select[fieldName] = fieldConfig
-    }
-  }
+  //   // 过滤 select 配置
+  //   for (const [fieldName, fieldConfig] of Object.entries(tableConfig.select || {})) {
+  //     if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
+  //       continue
+  //     }
+  //     filteredJsdocConfig[schemaName].select[fieldName] = fieldConfig
+  //   }
+  // }
   
-  code += `export const jsdocConfig = ${JSON.stringify(filteredJsdocConfig, null, 2)} as const\n\n`
+  // code += `export const jsdocConfig = ${JSON.stringify(filteredJsdocConfig, null, 2)} as const\n\n`
 
-  // 生成合并后的配置
-  code += `/**\n * 合并后的 Schema 自定义配置\n */\n`
-  code += `export const schemaCustomizations = {\n`
+  // // 生成合并后的配置
+  // code += `/**\n * 合并后的 Schema 自定义配置\n */\n`
+  // code += `export const schemaCustomizations = {\n`
 
-  for (const [schemaName, tableConfig] of Object.entries(mergedConfig)) {
-    const config = tableConfig as any
-    code += `  ${schemaName}: {\n`
-    code += `    insert: {\n`
-    for (const [fieldName, fieldConfig] of Object.entries(config.insert || {})) {
-      // 跳过空配置对象
-          if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
-            continue
-          }
-      const configStr = typeof fieldConfig === 'string' ? fieldConfig : JSON.stringify(fieldConfig)
-      code += `        ${fieldName}: ${configStr},\n`
-    }
-    code += `    },\n`
-    code += `    select: {\n`
-    for (const [fieldName, fieldConfig] of Object.entries(config.select || {})) {
-      // 跳过空配置对象
-          if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
-            continue
-          }
-      const configStr = typeof fieldConfig === 'string' ? fieldConfig : JSON.stringify(fieldConfig)
-      code += `        ${fieldName}: ${configStr},\n`
-    }
-    code += `    }\n`
-    code += `  },\n`
-  }
+  // for (const [schemaName, tableConfig] of Object.entries(mergedConfig)) {
+  //   const config = tableConfig as any
+  //   code += `  ${schemaName}: {\n`
+  //   code += `    insert: {\n`
+  //   for (const [fieldName, fieldConfig] of Object.entries(config.insert || {})) {
+  //     // 跳过空配置对象
+  //         if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
+  //           continue
+  //         }
+  //     const configStr = typeof fieldConfig === 'string' ? fieldConfig : JSON.stringify(fieldConfig)
+  //     code += `        ${fieldName}: ${configStr},\n`
+  //   }
+  //   code += `    },\n`
+  //   code += `    select: {\n`
+  //   for (const [fieldName, fieldConfig] of Object.entries(config.select || {})) {
+  //     // 跳过空配置对象
+  //         if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
+  //           continue
+  //         }
+  //     const configStr = typeof fieldConfig === 'string' ? fieldConfig : JSON.stringify(fieldConfig)
+  //     code += `        ${fieldName}: ${configStr},\n`
+  //   }
+  //   code += `    }\n`
+  //   code += `  },\n`
+  // }
 
-  code += `} as const\n\n`
+  // code += `} as const\n\n`
 
   // 生成静态 DbType 对象
   code += `/**\n * 数据库 TypeBox 配置\n */\n`

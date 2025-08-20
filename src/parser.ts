@@ -55,22 +55,29 @@ export function parseSchemaFile(filePath: string): TypeBoxConfig {
   const config: TypeBoxConfig = {}
   
   function visit(node: ts.Node) {
-    // 查找 pgTable 调用
-    if (ts.isCallExpression(node) && 
-        ts.isIdentifier(node.expression) && 
-        node.expression.text === 'pgTable') {
+    // 查找变量声明中的 pgTable 调用
+    if (ts.isVariableDeclaration(node) && 
+        node.initializer &&
+        ts.isCallExpression(node.initializer) &&
+        ts.isIdentifier(node.initializer.expression) &&
+        node.initializer.expression.text === 'pgTable') {
       
-      // 获取表名
-      const tableNameArg = node.arguments[0]
+      // 获取变量名（schema名称）
+      const schemaName = ts.isIdentifier(node.name) ? node.name.text : null
+      if (!schemaName) {
+        ts.forEachChild(node, visit)
+        return
+      }
+      
+      // 获取表名参数（用于调试，但不用于key）
+      const tableNameArg = node.initializer.arguments[0]
       if (!ts.isStringLiteral(tableNameArg)) {
         ts.forEachChild(node, visit)
         return
       }
       
-      const tableName = tableNameArg.text
-      
       // 获取字段定义对象
-      const fieldsArg = node.arguments[1]
+      const fieldsArg = node.initializer.arguments[1]
       if (!ts.isObjectLiteralExpression(fieldsArg)) {
         ts.forEachChild(node, visit)
         return
@@ -111,7 +118,7 @@ export function parseSchemaFile(filePath: string): TypeBoxConfig {
       
       // 只有当有配置时才添加到结果中
       if (Object.keys(tableConfig.insert!).length > 0 || Object.keys(tableConfig.select!).length > 0) {
-        config[tableName + 'Schema'] = tableConfig
+        config[schemaName] = tableConfig
       }
     }
     
