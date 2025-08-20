@@ -1,5 +1,5 @@
 {
-	"name": "schema-typebox-generator",
+	"name": "@pori15/schema-typebox-generator",
 	"version": "1.0.0",
 	"author": "pori",
 	"type": "module",

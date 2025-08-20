@@ -118,15 +118,43 @@ export function parseSchemaFile(filePath: string): TypeBoxConfig {
 }
 
 /**
+ * 递归查找目录中的所有 .ts 文件
+ */
+function findTsFiles(dir: string): string[] {
+  const files: string[] = []
+  
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true })
+    
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name)
+      
+      if (entry.isDirectory()) {
+        // 递归扫描子目录
+        files.push(...findTsFiles(fullPath))
+      } else if (entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts')) {
+        // 添加 .ts 文件（排除 .d.ts 文件）
+        files.push(fullPath)
+      }
+    }
+  } catch (error) {
+    console.warn(`警告: 无法读取目录 ${dir}:`, error)
+  }
+  
+  return files
+}
+
+/**
  * 解析多个 schema 文件
  */
 export function parseSchemaFiles(schemaDir: string): TypeBoxConfig {
   const config: TypeBoxConfig = {}
   
-  // 查找所有 .ts 文件
-  const files = fs.readdirSync(schemaDir)
-    .filter(file => file.endsWith('.ts') && !file.endsWith('.d.ts'))
-    .map(file => path.join(schemaDir, file))
+  // 递归查找所有 .ts 文件
+  const files = findTsFiles(schemaDir)
+  
+  console.log(`🔍 找到 ${files.length} 个 TypeScript 文件:`)
+  files.forEach(file => console.log(`  - ${file}`))
   
   for (const file of files) {
     const fileConfig = parseSchemaFile(file)
