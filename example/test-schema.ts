@@ -6,8 +6,8 @@ import { pgTable, text, integer, timestamp } from 'drizzle-orm/pg-core'
  */
 export const userSchema = pgTable('users', {
   id: integer('id').primaryKey(),
-  email: text('email').notNull(), // @typebox { "format": "email" }
-  name: text('name').notNull(), // @typebox { "minLength": 2, "maxLength": 50 }
+  email: text('email').notNull(), // 邮箱 @typebox { "format": "email" }
+  name: text('name').notNull(), // 姓名 @typebox { "minLength": 2, "maxLength": 50 }
   age: integer('age'), // @typebox { "minimum": 0, "maximum": 120 }
   createdAt: timestamp('created_at').defaultNow(), // @typebox
   updatedAt: timestamp('updated_at').defaultNow()

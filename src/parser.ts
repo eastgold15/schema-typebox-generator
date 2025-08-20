@@ -27,8 +27,13 @@ function parseTypeBoxComment(comment: string): any {
   }
   
   try {
+    // 将单引号转换为双引号以支持更灵活的 JSON 格式
+    const normalizedConfigStr = configStr
+      .replace(/'/g, '"')  // 将单引号替换为双引号
+      .replace(/([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/g, '$1"$2":')  // 为属性名添加双引号
+    
     // 解析 JSON 配置
-    return JSON.parse(configStr)
+    return JSON.parse(normalizedConfigStr)
   } catch (error) {
     console.warn(`Failed to parse @typebox config: ${configStr}`, error)
     return null
