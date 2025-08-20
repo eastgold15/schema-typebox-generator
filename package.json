@@ -1,7 +1,7 @@
 {
 	"name": "schema-typebox-generator",
 	"version": "1.0.0",
-	"author": "boer",
+	"author": "pori",
 	"type": "module",
 	"types": "./dist/index.d.ts",
 	"module": "./dist/index.js",
@@ -15,7 +15,7 @@
 		}
 	},
 	"description": "自动从 Drizzle Schema 文件中解析 JSDoc @typebox 注释并生成 TypeBox 配置的工具库",
-	"homepage": "https://github.com/boer/schema-typebox-generator",
+	"homepage": "https://github.com/pori/schema-typebox-generator",
 	"keywords": [
 		"drizzle",
 		"typebox",

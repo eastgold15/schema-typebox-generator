@@ -23,6 +23,8 @@ Schema TypeBox Generator - 自动生成 TypeBox 配置
 选项:
   --no-elysia                        不包含 Elysia 相关代码
   --config <configFile>              指定配置文件路径
+  --spreads-import <path>            指定 spreads 导入路径 (默认: './dizzle.type.js')
+  --schema-import <path>             指定 dbSchema 和 tableNames 导入路径 (默认: './generated-schema.js')
 
 示例:
   # 生成配置文件
@@ -33,6 +35,9 @@ Schema TypeBox Generator - 自动生成 TypeBox 配置
   
   # 仅解析配置
   schema-typebox-gen parse ./src/db/schema
+  
+  # 自定义导入路径
+  schema-typebox-gen generate ./src/db/schema ./src/db/database.types.ts --spreads-import './types/spreads.js' --schema-import './schema/index.js'
   
   # 使用配置文件
   schema-typebox-gen generate --config ./schema-gen.config.js
@@ -49,7 +54,9 @@ function parseArgs(args: string[]) {
     outputPath: '',
     options: {
       includeElysia: true,
-      configFile: null
+      configFile: null,
+      spreadsImport: './dizzle.type.js',
+      schemaImport: './generated-schema.js'
     }
   }
   
@@ -61,6 +68,10 @@ function parseArgs(args: string[]) {
       result.options.includeElysia = false
     } else if (arg === '--config') {
       result.options.configFile = args[++i]
+    } else if (arg === '--spreads-import') {
+      result.options.spreadsImport = args[++i]
+    } else if (arg === '--schema-import') {
+      result.options.schemaImport = args[++i]
     } else if (!result.command) {
       result.command = arg
     } else if (!result.schemaDir) {

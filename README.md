@@ -47,6 +47,11 @@ schema-typebox-gen watch ./src/db/schema ./src/db/database.types.ts
 
 # 仅解析配置（不生成文件）
 schema-typebox-gen parse ./src/db/schema
+
+# 自定义导入路径
+schema-typebox-gen generate ./src/db/schema ./src/db/database.types.ts \
+  --spreads-import './types/spreads.js' \
+  --schema-import './schema/index.js'
 ```
 
 ### 3. 在代码中使用
@@ -155,6 +160,13 @@ export const schemas = generateTypeBoxSchemas()
 
 ## 配置选项
 
+### CLI 选项
+
+- `--no-elysia`: 不包含 Elysia 相关代码
+- `--config <configFile>`: 指定配置文件路径
+- `--spreads-import <path>`: 指定 spreads 导入路径 (默认: `'./dizzle.type.js'`)
+- `--schema-import <path>`: 指定 dbSchema 和 tableNames 导入路径 (默认: `'./generated-schema.js'`)
+
 ### GeneratorConfig
 
 ```typescript
@@ -167,6 +179,10 @@ interface GeneratorConfig {
   manualConfig?: Record<string, any>
   /** 是否包含 Elysia 相关代码 */
   includeElysia?: boolean
+  /** spreads 导入路径 */
+  spreadsImport?: string
+  /** dbSchema 和 tableNames 导入路径 */
+  schemaImport?: string
 }
 ```
 
@@ -179,6 +195,8 @@ export default {
   schemaDir: './src/db/schema',
   outputPath: './src/db/database.types.ts',
   includeElysia: true,
+  spreadsImport: './types/spreads.js',
+  schemaImport: './schema/generated-schema.js',
   manualConfig: {
     userSchema: {
       insert: {

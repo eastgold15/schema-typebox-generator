@@ -14,6 +14,10 @@ export interface GeneratorConfig {
   manualConfig?: Record<string, any>
   /** 是否包含 Elysia 相关代码 */
   includeElysia?: boolean
+  /** spreads 导入路径 */
+  spreadsImport?: string
+  /** dbSchema 和 tableNames 导入路径 */
+  schemaImport?: string
 }
 
 /**
@@ -108,8 +112,8 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
   }
 
   code += `import { createInsertSchema, createSelectSchema } from 'drizzle-typebox'\n`
-  code += `import { spreads } from './dizzle.type.js'\n`
-  code += `import { dbSchema, tableNames } from './generated-schema.js'\n\n`
+  code += `import { spreads } from '${config.spreadsImport || './dizzle.type.js'}'\n`
+  code += `import { dbSchema, tableNames } from '${config.schemaImport || './generated-schema.js'}'\n\n`
 
   // 生成配置对象
   code += `/**\n * JSDoc 解析的 TypeBox 配置\n */\n`
