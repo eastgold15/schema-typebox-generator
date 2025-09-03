@@ -1,54 +1,58 @@
 {
-	"name": "@pori15/schema-typebox-generator",
-	"version": "1.0.2",
-	"author": "pori",
-	"type": "module",
-	"types": "./dist/index.d.ts",
-	"module": "./dist/index.js",
-	"bin": {
-		"schema-typebox-gen": "./dist/cli.js"
-	},
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		}
-	},
-	"description": "自动从 Drizzle Schema 文件中解析 JSDoc @typebox 注释并生成 TypeBox 配置的工具库",
-	"homepage": "https://github.com/pori/schema-typebox-generator",
-	"keywords": [
-		"drizzle",
-		"typebox",
-		"schema",
-		"jsdoc",
-		"generator",
-		"typescript",
-		"elysia",
-		"validation"
-	],
-	"scripts": {
-		"build": "bunx pkgroll",
-		"dev": "bun run src/index.ts",
-		"test": "bun test",
-		"prepublishOnly": "bun run build",
-		"publish": " npm publish --access public"
-	},
-	"files": [
-		"dist"
-	],
-	"dependencies": {
-		"typescript": "^5.8.3"
-	},
-	"devDependencies": {
-		"@types/node": "^22.15.18",
-		"pkgroll": "^2.12.2"
-	},
-	"peerDependencies": {
-		"drizzle-orm": ">=0.29.0",
-		"drizzle-typebox": ">=0.1.0"
-	},
-	"engines": {
-		"node": ">=18",
-		"bun": ">=1.0.0"
-	}
+  "name": "@pori15/schema-typebox-generator",
+  "version": "2.0.0",
+  "author": "pori",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "module": "./dist/index.js",
+  "bin": {
+    "schema-typebox-gen": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "description": "自动从 Drizzle Schema 文件中解析 JSDoc @typebox 注释并生成 TypeBox 配置的工具库",
+  "homepage": "https://github.com/pori/schema-typebox-generator",
+  "keywords": [
+    "drizzle",
+    "typebox",
+    "schema",
+    "jsdoc",
+    "generator",
+    "typescript",
+    "elysia",
+    "validation"
+  ],
+  "scripts": {
+    "build": "bunx pkgroll --clean-dist",
+    "dev": "bun run src/index.ts",
+    "test": "bun test",
+    "prepublishOnly": "bun run build",
+    "publish": " npm publish --access public"
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.15.18",
+    "pkgroll": "^2.12.2",
+    "typescript": "^5.9.2"
+  },
+  "peerDependencies": {
+    "drizzle-orm": ">=0.29.0",
+    "drizzle-typebox": "^0.3.3",
+    "ts-morph": "^26.0.0"
+  },
+  "engines": {
+    "node": ">=18",
+    "bun": ">=1.0.0"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.28.3",
+    "@babel/traverse": "^7.28.3",
+    "@babel/types": "^7.28.2"
+  }
 }

@@ -1,15 +1,15 @@
 import * as fs from 'fs'
-import * as path from 'path'
-import { TypeBoxConfig, parseSchemaFiles, generateTypeBoxImports } from './parser.js'
+import { TypeBoxConfig, generateTypeBoxImports, parseSchemaFiles } from './parser.js'
+import { SchemaCollector, createSchemaCollector, type SchemaCollectorConfig } from './schema-collector.js'
 
 /**
  * 生成器配置接口
  */
 export interface GeneratorConfig {
-  /** Schema 文件夹路径 */
-  schemaDir: string
-  /** 输出文件路径 */
-  outputPath: string
+  /** 数据库文件夹路径 */
+  dbDir: string
+  /** 输出文件名（相对于dbDir/sdb/） */
+  outputFileName?: string
   /** 手动配置覆盖 */
   manualConfig?: Record<string, any>
   /** 是否包含 Elysia 相关代码 */
@@ -18,6 +18,29 @@ export interface GeneratorConfig {
   spreadsImport?: string
   /** dbSchema 和 tableNames 导入路径 */
   schemaImport?: string
+  /** Schema 收集器配置 */
+  schemaConfig?: Partial<SchemaCollectorConfig>
+}
+
+/**
+ * 格式化对象为JavaScript对象字面量字符串（不带引号的属性名）
+ */
+function formatObjectLiteral(obj: any): string {
+  if (obj === null || obj === undefined) return 'null'
+  if (typeof obj === 'string') return `"${obj}"`
+  if (typeof obj === 'number' || typeof obj === 'boolean') return String(obj)
+  
+  if (Array.isArray(obj)) {
+    return `[${obj.map(formatObjectLiteral).join(', ')}]`
+  }
+  
+  if (typeof obj === 'object') {
+    const entries = Object.entries(obj)
+      .map(([key, value]) => `${key}: ${formatObjectLiteral(value)}`)
+    return `{ ${entries.join(', ')} }`
+  }
+  
+  return String(obj)
 }
 
 /**
@@ -32,27 +55,27 @@ function convertToTypeBoxObjects(config: any): any {
     if (typeof value === 'object' && value !== null) {
       // 处理嵌套对象
       if ('format' in value) {
-        result[key] = `t.String(${JSON.stringify(value)})`
+        result[key] = `t.String(${formatObjectLiteral(value)})`
       } else if ('minLength' in value || 'maxLength' in value) {
-        result[key] = `t.String(${JSON.stringify(value)})`
+        result[key] = `t.String(${formatObjectLiteral(value)})`
       } else if ('minimum' in value || 'maximum' in value) {
-        result[key] = `t.Number(${JSON.stringify(value)})`
+        result[key] = `t.Number(${formatObjectLiteral(value)})`
       } else if ('default' in value) {
         const defaultValue = (value as any).default
         if (typeof defaultValue === 'string') {
-          result[key] = `t.String(${JSON.stringify(value)})`
+          result[key] = `t.String(${formatObjectLiteral(value)})`
         } else if (typeof defaultValue === 'number') {
-          result[key] = `t.Number(${JSON.stringify(value)})`
+          result[key] = `t.Number(${formatObjectLiteral(value)})`
         } else if (typeof defaultValue === 'boolean') {
-          result[key] = `t.Boolean(${JSON.stringify(value)})`
+          result[key] = `t.Boolean(${formatObjectLiteral(value)})`
         } else {
-          result[key] = JSON.stringify(value)
+          result[key] = formatObjectLiteral(value)
         }
       } else {
         result[key] = convertToTypeBoxObjects(value)
       }
     } else {
-      result[key] = JSON.stringify(value)
+      result[key] = formatObjectLiteral(value)
     }
   }
 
@@ -96,7 +119,7 @@ function mergeConfigurations(jsdocConfig: TypeBoxConfig, manualConfig: any = {})
 /**
  * 生成 TypeScript 代码
  */
-function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxConfig): string {
+function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxConfig, schemaCollector: SchemaCollector): string {
   const mergedConfig = mergeConfigurations(jsdocConfig, config.manualConfig)
   const imports = generateTypeBoxImports(jsdocConfig)
 
@@ -112,70 +135,17 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
   }
 
   code += `import { createInsertSchema, createSelectSchema } from 'drizzle-typebox'\n`
-  code += `import { spreads } from '${config.spreadsImport || './dizzle.type.js'}'\n`
-  code += `import { dbSchema, tableNames } from '${config.schemaImport || './generated-schema.js'}'\n\n`
-
-  // 生成配置对象（已注释掉，不再生成 jsdocConfig 和 schemaCustomizations）
-  // code += `/**\n * JSDoc 解析的 TypeBox 配置\n */\n`
   
-  // // 过滤掉空对象的 jsdocConfig
-  // const filteredJsdocConfig: any = {}
-  // for (const [schemaName, tableConfig] of Object.entries(jsdocConfig)) {
-  //   filteredJsdocConfig[schemaName] = {
-  //     insert: {},
-  //     select: {}
-  //   }
-    
-  //   // 过滤 insert 配置
-  //   for (const [fieldName, fieldConfig] of Object.entries(tableConfig.insert || {})) {
-  //     if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
-  //       continue
-  //     }
-  //     filteredJsdocConfig[schemaName].insert[fieldName] = fieldConfig
-  //   }
-    
-  //   // 过滤 select 配置
-  //   for (const [fieldName, fieldConfig] of Object.entries(tableConfig.select || {})) {
-  //     if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
-  //       continue
-  //     }
-  //     filteredJsdocConfig[schemaName].select[fieldName] = fieldConfig
-  //   }
-  // }
+  // 添加 spreads 导入或内联实现
+  if (config.spreadsImport) {
+    code += `import { spreads } from '${config.spreadsImport}'\n`
+  } else {
+    // 内联 spreads 实现
+    code += `// 内联 spreads 实现\n`
+    code += `const spreads = (obj: any, type: string) => obj\n\n`
+  }
   
-  // code += `export const jsdocConfig = ${JSON.stringify(filteredJsdocConfig, null, 2)} as const\n\n`
-
-  // // 生成合并后的配置
-  // code += `/**\n * 合并后的 Schema 自定义配置\n */\n`
-  // code += `export const schemaCustomizations = {\n`
-
-  // for (const [schemaName, tableConfig] of Object.entries(mergedConfig)) {
-  //   const config = tableConfig as any
-  //   code += `  ${schemaName}: {\n`
-  //   code += `    insert: {\n`
-  //   for (const [fieldName, fieldConfig] of Object.entries(config.insert || {})) {
-  //     // 跳过空配置对象
-  //         if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
-  //           continue
-  //         }
-  //     const configStr = typeof fieldConfig === 'string' ? fieldConfig : JSON.stringify(fieldConfig)
-  //     code += `        ${fieldName}: ${configStr},\n`
-  //   }
-  //   code += `    },\n`
-  //   code += `    select: {\n`
-  //   for (const [fieldName, fieldConfig] of Object.entries(config.select || {})) {
-  //     // 跳过空配置对象
-  //         if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
-  //           continue
-  //         }
-  //     const configStr = typeof fieldConfig === 'string' ? fieldConfig : JSON.stringify(fieldConfig)
-  //     code += `        ${fieldName}: ${configStr},\n`
-  //   }
-  //   code += `    }\n`
-  //   code += `  },\n`
-  // }
-
-  // code += `} as const\n\n`
+  code += `import { dbSchema } from '${config.schemaImport || './schema/index'}'\n\n`
 
   // 生成静态 DbType 对象
   code += `/**\n * 数据库 TypeBox 配置\n */\n`
@@ -195,7 +165,7 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
       if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
         continue
       }
-      const configStr = typeof fieldConfig === 'string' ? fieldConfig : JSON.stringify(fieldConfig)
+      const configStr = typeof fieldConfig === 'string' ? fieldConfig : formatObjectLiteral(fieldConfig)
       validInsertConfigs.push(`        ${fieldName}: ${configStr}`)
     }
     
@@ -223,7 +193,7 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
       if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
         continue
       }
-      const configStr = typeof fieldConfig === 'string' ? fieldConfig : JSON.stringify(fieldConfig)
+      const configStr = typeof fieldConfig === 'string' ? fieldConfig : formatObjectLiteral(fieldConfig)
       validSelectConfigs.push(`        ${fieldName}: ${configStr}`)
     }
     
@@ -253,7 +223,7 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
       if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
         continue
       }
-      const configStr = typeof fieldConfig === 'string' ? fieldConfig : JSON.stringify(fieldConfig)
+      const configStr = typeof fieldConfig === 'string' ? fieldConfig : formatObjectLiteral(fieldConfig)
       validInsertConfigs.push(`        ${fieldName}: ${configStr}`)
     }
     
@@ -281,7 +251,7 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
       if (typeof fieldConfig === 'object' && fieldConfig !== null && Object.keys(fieldConfig).length === 0) {
         continue
       }
-      const configStr = typeof fieldConfig === 'string' ? fieldConfig : JSON.stringify(fieldConfig)
+      const configStr = typeof fieldConfig === 'string' ? fieldConfig : formatObjectLiteral(fieldConfig)
       validSelectConfigs.push(`        ${fieldName}: ${configStr}`)
     }
     
@@ -306,22 +276,31 @@ function generateTypeScriptCode(config: GeneratorConfig, jsdocConfig: TypeBoxCon
  */
 export async function generateTypeBoxFile(config: GeneratorConfig): Promise<void> {
   try {
+    // 创建 Schema 收集器
+    const schemaCollector = createSchemaCollector({
+      dbDir: config.dbDir,
+      ...config.schemaConfig
+    })
+
+    // 收集表定义并生成 schema 索引文件
+    const tables = await schemaCollector.collectTables()
+    await schemaCollector.generateSchemaIndex(tables)
+
     // 解析 JSDoc 配置
-    const jsdocConfig = parseSchemaFiles(config.schemaDir)
+    const paths = schemaCollector.getPaths()
+    const jsdocConfig = await parseSchemaFiles(paths.schemaDir)
 
     // 生成 TypeScript 代码
-    const code = generateTypeScriptCode(config, jsdocConfig)
+    const code = generateTypeScriptCode(config, jsdocConfig, schemaCollector)
 
-    // 确保输出目录存在
-    const outputDir = path.dirname(config.outputPath)
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true })
-    }
+    // 确定输出路径
+    const outputFileName = config.outputFileName || 'typebox-config.ts'
+    const outputPath = schemaCollector.getOutputPath(outputFileName)
 
     // 写入文件
-    fs.writeFileSync(config.outputPath, code, 'utf-8')
+    fs.writeFileSync(outputPath, code, 'utf-8')
 
-    console.log(`✅ TypeBox 配置文件已生成: ${config.outputPath}`)
+    console.log(`✅ TypeBox 配置文件已生成: ${outputPath}`)
     console.log(`📊 解析到 ${Object.keys(jsdocConfig).length} 个表的配置`)
 
     // 显示解析结果摘要
@@ -335,18 +314,4 @@ export async function generateTypeBoxFile(config: GeneratorConfig): Promise<void
     console.error('❌ 生成 TypeBox 配置文件失败:', error)
     throw error
   }
-}
-
-/**
- * 监听文件变化并自动重新生成
- */
-export function watchAndGenerate(config: GeneratorConfig): void {
-  console.log(`🔍 监听 Schema 文件变化: ${config.schemaDir}`)
-
-  fs.watch(config.schemaDir, { recursive: true }, (eventType, filename) => {
-    if (filename && filename.endsWith('.ts')) {
-      console.log(`📝 检测到文件变化: ${filename}`)
-      generateTypeBoxFile(config).catch(console.error)
-    }
-  })
 }
