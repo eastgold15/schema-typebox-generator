@@ -17,34 +17,38 @@ import { dbSchema } from './schema/index'
 export const DbType = {
   typebox: {
     insert: {
-      abcchema: createInsertSchema(dbSchema.abcchema, {
+      userSchema: createInsertSchema(dbSchema.userSchema, {
         id: t.String({ format: "email" }),
         email: t.String({ format: "email" }),
         phone: t.String({ format: "phone" })
       }),
+      tokenSchema: createInsertSchema(dbSchema.tokenSchema),
     },
     select: {
-      abcchema: createSelectSchema(dbSchema.abcchema, {
+      userSchema: createSelectSchema(dbSchema.userSchema, {
         id: t.String({ format: "email" }),
         email: t.String({ format: "email" }),
         phone: t.String({ format: "phone" })
       }),
+      tokenSchema: createSelectSchema(dbSchema.tokenSchema),
     }
   },
   spreads: {
     insert: spreads({
-      abcchema: createInsertSchema(dbSchema.abcchema, {
+      userSchema: createInsertSchema(dbSchema.userSchema, {
         id: t.String({ format: "email" }),
         email: t.String({ format: "email" }),
         phone: t.String({ format: "phone" })
       }),
+      tokenSchema: createInsertSchema(dbSchema.tokenSchema),
     }, 'insert'),
     select: spreads({
-      abcchema: createSelectSchema(dbSchema.abcchema, {
+      userSchema: createSelectSchema(dbSchema.userSchema, {
         id: t.String({ format: "email" }),
         email: t.String({ format: "email" }),
         phone: t.String({ format: "phone" })
       }),
+      tokenSchema: createSelectSchema(dbSchema.tokenSchema),
     }, 'select')
   }
 } as const

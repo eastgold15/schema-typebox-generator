@@ -120,6 +120,7 @@ export class CommentManager {
       '',
       'import { getTableColumns, getTableName, sql, type Table } from "drizzle-orm";',
       'import { dbSchema } from "../schema/index";',
+      'import { db } from "../connection";',
       '',
 
     ];
@@ -209,7 +210,9 @@ export class CommentManager {
       ...pgComments,
       ...runPgComments,
       ...dbComments,
-      ...tableConfigs,
+      ...(tableConfigs.length > 0 ? tableConfigs.map((config, index) =>
+        index === tableConfigs.length - 1 ? config : config + ','
+      ) : []),
       '} as const',
       '',
       '/**',
@@ -222,7 +225,8 @@ export class CommentManager {
       ),
       '',
       '  return runPgComments(db);',
-      '}'
+      '}',
+      'applyDbComments(db)'
     ]
 
     return content.join('\n')

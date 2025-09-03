@@ -1,13 +1,14 @@
 /**
    * 自动生成的数据库 Schema 文件
    * 请勿手动修改此文件
-   * 生成时间: 2025-09-03T05:36:47.327Z
+   * 生成时间: 2025-09-03T06:24:47.419Z
    */
 
-  import { abcchema } from './schema';
+  import { userSchema, tokenSchema } from './schema';
 
   export const dbSchema = {
-  abcchema,
+  userSchema,
+  tokenSchema,
 };
 // 导出所有扫描到的数据库模式文件
 export * from "./schema";
@@ -20,7 +21,7 @@ export * from "./schema";
   /**
    * 所有表的名称列表
    */
-  export const tableNames = ['abcchema'] as const;
+  export const tableNames = ['userSchema', 'tokenSchema'] as const;
 
   /**
    * 表名称类型

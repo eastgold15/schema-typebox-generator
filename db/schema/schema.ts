@@ -15,7 +15,7 @@ import {
 export const role = pgEnum('role', ['user', 'admin']);
 export const abctate = pgEnum('user_state', ['active', 'inactive']);
 // 用户表
-export const abcchema = pgTable(
+export const userSchema = pgTable(
   "abc",
   {
     /**
@@ -43,3 +43,15 @@ export const abcchema = pgTable(
   ],
 );
 
+
+export const tokenSchema = pgTable(
+  "tokens",
+  {
+    id: serial("id").primaryKey(),
+    ownerId: serial("owner_id").references(() => userSchema.id),
+    accessToken: text("access_token").notNull(),
+    refreshToken: text("refresh_token").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (token) => [index("token_id_idx").on(token.id)],
+);

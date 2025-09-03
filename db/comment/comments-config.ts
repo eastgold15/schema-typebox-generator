@@ -6,6 +6,7 @@
 
 import { getTableColumns, getTableName, sql, type Table } from "drizzle-orm";
 import { dbSchema } from "../schema/index";
+import { db } from "../connection";
 
 type ColumnComments<T extends Table> = {
   [K in keyof T["_"]["columns"]]: string;
@@ -61,7 +62,7 @@ export async function runPgComments(db: any) {
  * 数据库注释配置
  */
 export const dbComments = {
-  abcchema: {
+  userSchema: {
     id: "主键",
     username: "",
     password: "OAuth用户可能没有密码",
@@ -74,6 +75,13 @@ export const dbComments = {
     googleId: "OAuth 相关字段 Google OAuth ID",
     createdAt: "",
     updatedAt: ""
+  },
+  tokenSchema: {
+    id: "",
+    ownerId: "",
+    accessToken: "",
+    refreshToken: "",
+    createdAt: ""
   }
 } as const
 
@@ -82,7 +90,9 @@ export const dbComments = {
  * 在数据库迁移后调用此函数来添加注释
  */
 export function applyDbComments(db: any) {
-  pgComments(dbSchema.abcchema, dbComments.abcchema);
+  pgComments(dbSchema.userSchema, dbComments.userSchema);
+  pgComments(dbSchema.tokenSchema, dbComments.tokenSchema);
 
   return runPgComments(db);
 }
+applyDbComments(db)
