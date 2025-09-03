@@ -13,9 +13,9 @@
 ## 安装
 
 ```bash
-bun add schema-typebox-generator
+bun add @pori15/schema-typebox-generator
 # 或
-npm install schema-typebox-generator
+npm install @pori15/schema-typebox-generator
 ```
 
 ## 使用方法
@@ -40,48 +40,47 @@ export const userSchema = pgTable('users', {
 
 ```bash
 # 一键生成所有必要文件
-npx tsx src/cli.ts <db-folder-path>
+npx schema-typebox-gen db
 
-# 示例：为 test-db 文件夹生成文件
-npx tsx src/cli.ts test-db
+# 或者使用源码运行
+npx tsx src/cli.ts db
 ```
 
 这个命令会自动生成以下文件：
 - `db/schema/index.ts` - Schema 索引文件，导出所有 schema
-- `db/comments/comments-config.ts` - 注释配置文件
-- `db/comments/comment.plugin.ts` - 注释插件文件
-- `db/schema/database.types.ts` - TypeBox 类型定义文件
-- `db/utils/dizzle.type.ts` - 工具函数文件
+- `db/comments-config.ts` - 注释配置文件
+- `db/typebox.type.ts` - TypeBox 类型定义文件
 
-### 3. 使用生成的插件
+### 3. 使用生成的配置文件
 
-#### 在 Elysia 应用中使用注释插件
+#### 使用注释配置
+
+生成的 `comments-config.ts` 文件包含了数据库注释的配置和执行函数：
+
+```typescript
+import { runPgComments } from './db/comments-config'
+
+// 应用数据库注释
+await runPgComments()
+console.log('数据库注释已应用')
+```
+
+#### 使用 TypeBox 配置
+
+生成的 `typebox.type.ts` 文件可以直接在 Elysia 应用中使用：
 
 ```typescript
 import { Elysia } from 'elysia'
-import { commentPlugin } from './db/comments/comment.plugin'
+import { DbType } from './db/typebox.type'
 
 const app = new Elysia()
-  .use(commentPlugin)
+  .post('/users', ({ body }) => {
+    // body 会自动验证为 DbType.userSchema.insert 类型
+    return { success: true }
+  }, {
+    body: DbType.userSchema.insert
+  })
   .listen(3000)
-
-console.log('🦊 Elysia is running at http://localhost:3000')
-```
-
-#### 直接使用注释管理器
-
-```typescript
-import { CommentManager } from './db/comments/comment.plugin'
-
-const commentManager = new CommentManager()
-
-// 生成注释配置
-const config = commentManager.generateCommentsConfig()
-console.log('注释配置:', config)
-
-// 应用数据库注释
-await commentManager.applyComments()
-console.log('数据库注释已应用')
 ```
 
 ### 4. 生成的文件结构
@@ -92,13 +91,9 @@ console.log('数据库注释已应用')
 db/
 ├── schema/
 │   ├── index.ts              # Schema 索引文件
-│   ├── database.types.ts     # TypeBox 类型定义
 │   └── [your-schema-files]   # 原有的 schema 文件
-├── comments/
-│   ├── comments-config.ts    # 注释配置文件
-│   └── comment.plugin.ts     # 注释插件文件
-└── utils/
-    └── dizzle.type.ts        # 工具函数文件
+├── comments-config.ts        # 注释配置文件
+└── typebox.type.ts           # TypeBox 类型定义文件
 ```
 
 #### Schema 索引文件 (`db/schema/index.ts`)
@@ -124,7 +119,7 @@ export const dbSchema = {
 }
 ```
 
-#### TypeBox 类型文件 (`db/schema/database.types.ts`)
+#### TypeBox 类型文件 (`db/typebox.type.ts`)
 
 ```typescript
 /**
@@ -135,55 +130,76 @@ export const dbSchema = {
 
 import { t } from 'elysia'
 import { createInsertSchema, createSelectSchema } from 'drizzle-typebox'
-import { spreads } from '../utils/dizzle.type'
-import { dbSchema } from './index'
+import { spreads } from './spreads'
+import * as schema from './schema/index'
 
 /**
  * 数据库 TypeBox 配置
  */
 export const DbType = {
-  typebox: {
-    insert: {
-      userSchema: createInsertSchema(dbSchema.userSchema, {
-        email: t.String({ format: "email" }),
-        name: t.String({ minLength: 2, maxLength: 50 }),
-        age: t.Number({ minimum: 0, maximum: 120 }),
-      }),
-    },
-    select: {
-      userSchema: createSelectSchema(dbSchema.userSchema, {
-        email: t.String({ format: "email" }),
-        name: t.String({ minLength: 2, maxLength: 50 }),
-        age: t.Number({ minimum: 0, maximum: 120 }),
-      }),
-    }
+  abcchema: {
+    insert: createInsertSchema(schema.abcchema, {
+      // TypeBox 配置基于 JSDoc 注释自动生成
+    }),
+    select: createSelectSchema(schema.abcchema, {
+      // TypeBox 配置基于 JSDoc 注释自动生成
+    })
   }
 }
+
+export { spreads }
 ```
 
-#### 注释插件文件 (`db/comments/comment.plugin.ts`)
+#### 注释配置文件 (`db/comments-config.ts`)
 
 ```typescript
-import { Elysia } from 'elysia'
-import { CommentManager } from '../../src/comment-plugin'
+/**
+ * 自动生成的数据库注释配置文件
+ * 基于 Schema 文件中的 JSDoc 注释生成
+ * 请勿手动修改此文件
+ */
+
+import { Client } from 'pg'
 
 /**
- * 注释管理器实例
+ * PostgreSQL 注释配置
  */
-const commentManager = new CommentManager()
+export function pgComments() {
+  return [
+    // 表注释
+    `COMMENT ON TABLE "abcchema" IS 'Schema table';`,
+    // 列注释会根据实际的 JSDoc 注释自动生成
+  ]
+}
 
 /**
- * Elysia 注释插件
+ * 执行 PostgreSQL 注释
  */
-export const commentPlugin = new Elysia({ name: 'comment-plugin' })
-  .decorate('commentManager', commentManager)
-  .onStart(async () => {
-    console.log('🔧 正在应用数据库注释...')
-    await commentManager.applyComments()
-    console.log('✅ 数据库注释应用完成')
+export async function runPgComments() {
+  const client = new Client({
+    // 数据库连接配置
   })
+  
+  try {
+    await client.connect()
+    const comments = pgComments()
+    
+    for (const comment of comments) {
+      await client.query(comment)
+    }
+    
+    console.log('数据库注释应用成功')
+  } catch (error) {
+    console.error('应用数据库注释时出错:', error)
+  } finally {
+    await client.end()
+  }
+}
 
-export { CommentManager }
+// 如果直接运行此文件，则执行注释应用
+if (require.main === module) {
+  runPgComments()
+}
 ```
 
 ## 配置选项
@@ -191,10 +207,10 @@ export { CommentManager }
 ### CLI 参数
 
 ```bash
-npx tsx src/cli.ts <db-folder-path>
+npx schema-typebox-gen db
 ```
 
-- `<db-folder-path>`: 数据库文件夹路径，CLI 会在此文件夹中查找 schema 文件并生成相应的配置文件
+- `db`: 固定参数，指定数据库文件夹名称。CLI 会在当前目录下的 `db` 文件夹中查找 schema 文件并生成相应的配置文件
 
 ### 生成器配置
 
@@ -227,17 +243,15 @@ export interface SchemaCollectorConfig {
 可以通过修改生成的注释配置文件来自定义数据库注释：
 
 ```typescript
-// db/comments/comments-config.ts
-export const commentsConfig = {
-  userSchema: {
-    table: "用户表",
-    columns: {
-      id: "用户ID",
-      email: "邮箱地址",
-      name: "用户姓名",
-      age: "年龄"
-    }
-  }
+// db/comments-config.ts
+export function pgComments() {
+  return [
+    `COMMENT ON TABLE "users" IS '用户表';`,
+    `COMMENT ON COLUMN "users"."id" IS '用户ID';`,
+    `COMMENT ON COLUMN "users"."email" IS '邮箱地址';`,
+    `COMMENT ON COLUMN "users"."name" IS '用户姓名';`,
+    `COMMENT ON COLUMN "users"."age" IS '年龄';`
+  ]
 }
 ```
 
@@ -260,15 +274,15 @@ status: text('status'), // @typebox { "enum": ["active", "inactive"] }
 
 ### CLI 工具
 
-#### TypeBoxCLI.run(dbPath: string)
+#### main()
 
-主要的 CLI 入口点，处理指定数据库文件夹的所有生成任务。
+主要的 CLI 入口点，处理 `db` 文件夹的所有生成任务。
 
 ```typescript
-import { TypeBoxCLI } from 'schema-typebox-generator'
+import { main } from 'schema-typebox-generator'
 
-const cli = new TypeBoxCLI()
-await cli.run('./my-db-folder')
+// 直接调用主函数
+await main()
 ```
 
 ### 核心类和接口
@@ -278,15 +292,15 @@ await cli.run('./my-db-folder')
 用于扫描和收集 schema 文件的类。
 
 ```typescript
-import { createSchemaCollector } from 'schema-typebox-generator'
+import { SchemaCollector } from 'schema-typebox-generator'
 
-const collector = createSchemaCollector({
-  extensions: ['.ts'],
-  excludePatterns: ['*.test.ts', '*.spec.ts'],
-  includeSubdirectories: true
+const collector = new SchemaCollector({
+  projectRoot: './db',
+  schemaDir: './db/schema',
+  outputDir: './db'
 })
 
-const schemas = await collector.scanSchemaFiles('./db/schema')
+const schemas = await collector.collectSchemas()
 ```
 
 #### CommentManager
@@ -298,11 +312,11 @@ import { CommentManager } from 'schema-typebox-generator'
 
 const commentManager = new CommentManager()
 
-// 生成注释配置
-const config = commentManager.generateCommentsConfig()
+// 生成注释配置内容
+const content = commentManager.generateCommentConfigContent(schemas)
 
-// 应用数据库注释
-await commentManager.applyComments()
+// 应用数据库注释（通过生成的配置文件）
+// 请使用生成的 comments-config.ts 文件中的 runPgComments() 函数
 ```
 
 ### 工具函数
@@ -312,20 +326,21 @@ await commentManager.applyComments()
 解析 JSDoc 注释中的 TypeBox 配置。
 
 ```typescript
-import { parseTypeBoxComment } from 'schema-typebox-generator'
-
-const config = parseTypeBoxComment('{ "format": "email" }')
-// 返回: { format: "email" }
+// 此函数为内部使用，通常不需要直接调用
+// TypeBox 配置会在 CLI 运行时自动解析和生成
 ```
 
-#### generateTypeBoxFile(outputPath: string, schemas: any[])
+#### 生成文件函数
 
-生成 TypeBox 配置文件。
+生成各种配置文件的函数都集成在 CLI 工具中：
 
 ```typescript
-import { generateTypeBoxFile } from 'schema-typebox-generator'
+// 使用 CLI 工具自动生成所有文件
+npx schema-typebox-gen db
 
-await generateTypeBoxFile('./db/database.types.ts', schemas)
+// 或者在代码中调用
+import { main } from 'schema-typebox-generator'
+await main()
 ```
 
 ## 依赖要求

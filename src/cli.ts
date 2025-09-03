@@ -194,7 +194,7 @@ async function main() {
 }
 
 // 运行主函数
-if (process.argv[1] && process.argv[1].endsWith('cli.ts')) {
+if (process.argv[1] && (process.argv[1].endsWith('cli.ts') || process.argv[1].endsWith('cli.js'))) {
   main().catch(console.error)
 }
 

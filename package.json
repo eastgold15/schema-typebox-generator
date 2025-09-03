@@ -1,6 +1,6 @@
 {
   "name": "@pori15/schema-typebox-generator",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "author": "pori",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -14,27 +14,29 @@
       "import": "./dist/index.js"
     }
   },
-  "description": "自动从 Drizzle Schema 文件中解析 JSDoc @typebox 注释并生成 TypeBox 配置的工具库",
+  "description": "自动从 Drizzle Schema 文件中解析 JSDoc @typebox 注释并生成 TypeBox 配置的工具库。使用方法: npx @pori15/schema-typebox-generator 或 bunx @pori15/schema-typebox-generator。执行命令: schema-typebox-gen [options]",
   "homepage": "https://github.com/pori/schema-typebox-generator",
+  "bugs": {
+    "url": "https://github.com/pori/schema-typebox-generator/issues"
+  },
   "keywords": [
     "drizzle",
     "typebox",
     "schema",
     "jsdoc",
     "generator",
-    "typescript",
-    "elysia",
-    "validation"
+    "elysia"
   ],
   "scripts": {
-    "build": "bunx pkgroll --clean-dist",
+    "build": "bunx pkgroll ",
     "dev": "bun run src/index.ts",
     "test": "bun test",
     "prepublishOnly": "bun run build",
     "publish": " npm publish --access public"
   },
   "files": [
-    "dist"
+    "dist",
+    "package.json"
   ],
   "devDependencies": {
     "@types/node": "^22.15.18",
@@ -43,8 +45,7 @@
   },
   "peerDependencies": {
     "drizzle-orm": ">=0.29.0",
-    "drizzle-typebox": "^0.3.3",
-    "ts-morph": "^26.0.0"
+    "drizzle-typebox": "^0.3.3"
   },
   "engines": {
     "node": ">=18",
@@ -53,6 +54,7 @@
   "dependencies": {
     "@babel/parser": "^7.28.3",
     "@babel/traverse": "^7.28.3",
-    "@babel/types": "^7.28.2"
+    "@babel/types": "^7.28.2",
+    "ts-morph": "^26.0.0"
   }
 }
