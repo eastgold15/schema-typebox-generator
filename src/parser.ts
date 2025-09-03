@@ -1,7 +1,11 @@
-import { parse } from '@babel/parser';
+
 import * as t from '@babel/types';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as parser from '@babel/parser';
+import traverse from '@babel/traverse';
+// @ts-ignore
+const traverseDefault = traverse.default || traverse;
 /**
  * JSDoc 解析结果接口
  */
@@ -93,7 +97,7 @@ function parseTableFieldComments(sourceCode: string, fieldsObjectStart: number, 
   let currentFieldName = ''
   let currentComments: string[] = []
 
-  for (let i = 0;i < lines.length;i++) {
+  for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim()
 
     // 跳过空行和只有符号的行
@@ -162,16 +166,11 @@ export async function parseSchemaFileWithComments(filePath: string): Promise<{ [
   const result: { [tableName: string]: TableFieldsInfo } = {}
 
   try {
-    const ast = parse(sourceCode, {
+    const ast = parser.parse(sourceCode, {
       sourceType: 'module',
       plugins: ['typescript', 'decorators-legacy'],
     })
-
-    // 动态导入 traverse
-    const traverseModule = await import('@babel/traverse')
-    const traverse = traverseModule.default || traverseModule
-
-    traverse(ast, {
+    traverseDefault(ast, {
       VariableDeclarator(path) {
         const node = path.node
 
@@ -236,16 +235,12 @@ export async function parseSchemaFile(filePath: string): Promise<TypeBoxConfig> 
   const config: TypeBoxConfig = {}
 
   try {
-    const ast = parse(sourceCode, {
+    const ast = parser.parse(sourceCode, {
       sourceType: 'module',
       plugins: ['typescript', 'decorators-legacy'],
     })
 
-    // 动态导入 traverse
-    const traverseModule = await import('@babel/traverse')
-    const traverse = traverseModule.default || traverseModule
-
-    traverse(ast, {
+    traverseDefault(ast, {
       VariableDeclarator(path) {
         const node = path.node
 

@@ -61,6 +61,20 @@ export async function runPgComments(db: any) {
  * 数据库注释配置
  */
 export const dbComments = {
+  abcchema: {
+    id: "主键",
+    username: "",
+    password: "OAuth用户可能没有密码",
+    email: "邮箱",
+    phone: "手机号",
+    nickname: "",
+    avatar: "",
+    role: "user, admin",
+    abctate: "active, inactive",
+    googleId: "OAuth 相关字段 Google OAuth ID",
+    createdAt: "",
+    updatedAt: ""
+  }
 } as const
 
 /**
@@ -68,6 +82,7 @@ export const dbComments = {
  * 在数据库迁移后调用此函数来添加注释
  */
 export function applyDbComments(db: any) {
+  pgComments(dbSchema.abcchema, dbComments.abcchema);
 
   return runPgComments(db);
 }
